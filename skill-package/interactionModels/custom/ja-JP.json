@@ -1,0 +1,52 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "暗号化マシン",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AcceptMessageIntent",
+                    "slots": [
+                        {
+                            "name" : "AnyMessage",
+                            "type" : "ANY_MESSAGE"
+                        }
+                    ],
+                    "samples": [
+                        " {AnyMessage} ",
+                        " {AnyMessage} を暗号化して"
+                    ]
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                }
+            ],
+            "types": [
+                {
+                    "name" : "ANY_MESSAGE",
+                    "values":[
+                        {
+                            "id":"dummy",
+                            "name":{
+                                "value": "abcdefg"
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+  }
+  
