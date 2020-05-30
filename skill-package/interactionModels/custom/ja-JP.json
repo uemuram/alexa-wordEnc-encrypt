@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "暗号化マシン",
+            "invocationName": "暗号くん",
             "intents": [
                 {
                     "name": "AMAZON.CancelIntent",
@@ -27,13 +27,13 @@
                     "name": "AcceptMessageIntent",
                     "slots": [
                         {
-                            "name" : "AnyMessage",
-                            "type" : "ANY_MESSAGE"
+                            "name" : "Message",
+                            "type" : "AMAZON.SearchQuery"
                         }
                     ],
                     "samples": [
-                        " {AnyMessage} ",
-                        " {AnyMessage} を暗号化して"
+                        " {Message} ",
+                        "xxxxxxdummyxxxxx"
                     ]
                 },
                 {
@@ -41,19 +41,7 @@
                     "samples": []
                 }
             ],
-            "types": [
-                {
-                    "name" : "ANY_MESSAGE",
-                    "values":[
-                        {
-                            "id":"dummy",
-                            "name":{
-                                "value": "abcdefg"
-                            }
-                        }
-                    ]
-                }
-            ]
+            "types": []
         }
     }
   }

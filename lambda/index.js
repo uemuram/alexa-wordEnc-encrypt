@@ -4,48 +4,72 @@
 const Alexa = require('ask-sdk-core');
 const Axios = require('axios');
 const AWS = require('aws-sdk');
-
 const CommonUtil = require('/opt/CommonUtil');
 const cu = new CommonUtil();
 
 const API_URL = 'https://labs.goo.ne.jp/api/hiragana';
 
-/*
-/// tmp
-function checkState(h, state) {
-    const attr = h.attributesManager.getSessionAttributes();
-    return (attr.STATE == state);
-}
-function getState(h) {
-    const attr = h.attributesManager.getSessionAttributes();
-    return attr.STATE;
-}
-function setState(h, state) {
-    let attr = h.attributesManager.getSessionAttributes();
-    attr.STATE = state
-    h.attributesManager.setSessionAttributes(attr);
-}
-*/
+// ステータス
+const ACCEPT_MESSAGE = 0;
+
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        //        const speakOutput = '暗号化したいメッセージをどうぞ。';
+        const speakOutput = 'ようこそ。暗号化したいメッセージをどうぞ。';
         //const speakOutput = 'ようこそ。このスキルではメッセージの暗号化を行います。暗号化したいメッセージをどうぞ。';
-        console.log(cu.getHello1());
-        const speakOutput = cu.getSpeech();
-        console.log(cu.getHello2());
-        console.log(JSON.stringify(speakOutput));
-        console.log("xxx");
         const repromptOutput = '暗号化したいメッセージをどうぞ。'
 
-        cu.setState(handlerInput, "aaa");
-
+        cu.setState(handlerInput, ACCEPT_MESSAGE);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
+            .getResponse();
+    }
+};
+
+// 暗号化対象メッセージの受付
+const AcceptMessageIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent'
+            && cu.checkState(handlerInput,ACCEPT_MESSAGE);
+    },
+    async handle(handlerInput) {
+        let rawMessage = handlerInput.requestEnvelope.request.intent.slots.Message.value;
+        console.log(`生メッセージ: "${rawMessage}"`);
+        let kanaMessage;
+
+
+        try {
+            // API用のキーを取得
+            const ssm = new AWS.SSM();
+            const request = {
+                Name: 'ALEXA-WORDENC-GOOAPI-KEY',
+                WithDecryption: true
+            };
+            const response = await ssm.getParameter(request).promise();
+            const apiKey = response.Parameter.Value;
+
+            // ひらがな変換
+            const res = await Axios.post(API_URL, {
+                app_id: apiKey,
+                output_type: 'hiragana',
+                sentence: rawMessage
+            });
+            kanaMessage = res.data.converted;
+            console.log(`変換後メッセージ: "${kanaMessage}"`);
+
+        } catch (error) {
+            throw new Error(`http get error: ${error}`);
+        }
+        const speakOutput = `メッセージ「${kanaMessage}」を暗号化します。複合のための鍵を設定しますか?`;
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
             .getResponse();
     }
 };
@@ -81,43 +105,7 @@ const NoIntentHandler = {
     }
 };
 
-// 暗号化対象メッセージの受付
-const AcceptMessageIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent';
-    },
-    async handle(handlerInput) {
-        const speakOutput = 'メッセージを受付ました';
 
-        try {
-            // API用のキーを取得
-            const ssm = new AWS.SSM();
-            const request = {
-                Name: 'ALEXA-WORDENC-GOOAPI-KEY',
-                WithDecryption: true
-            };
-            const response = await ssm.getParameter(request).promise();
-            const apiKey = response.Parameter.Value;
-
-            const res = await Axios.post(API_URL, {
-                app_id: apiKey,
-                output_type: 'hiragana',
-                sentence: "今日は、さようなら。☆hello!"
-            });
-            const kana = res.data.converted;
-            console.log(`変換後: "${kana}"`);
-
-        } catch (error) {
-            throw new Error(`http get error: ${error}`);
-        }
-
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
-            .getResponse();
-    }
-};
 const HelpIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
