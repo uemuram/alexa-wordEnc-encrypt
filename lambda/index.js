@@ -2,15 +2,42 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
+const CommonUtil = require('/opt/CommonUtil');
+const cu = new CommonUtil();
+
+/*
+/// tmp
+function checkState(h, state) {
+    const attr = h.attributesManager.getSessionAttributes();
+    return (attr.STATE == state);
+}
+function getState(h) {
+    const attr = h.attributesManager.getSessionAttributes();
+    return attr.STATE;
+}
+function setState(h, state) {
+    let attr = h.attributesManager.getSessionAttributes();
+    attr.STATE = state
+    h.attributesManager.setSessionAttributes(attr);
+}
+*/
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = '暗号化したいメッセージをどうぞ。';
+//        const speakOutput = '暗号化したいメッセージをどうぞ。';
         //const speakOutput = 'ようこそ。このスキルではメッセージの暗号化を行います。暗号化したいメッセージをどうぞ。';
+        console.log(cu.getHello1());
+        const speakOutput = cu.getSpeech();
+        console.log(cu.getHello2());
+        console.log(JSON.stringify(speakOutput));
+        console.log("xxx");
         const repromptOutput = '暗号化したいメッセージをどうぞ。'
+
+        cu.setState(handlerInput, "aaa");
+
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
@@ -25,6 +52,9 @@ const YesIntentHandler = {
     },
     handle(handlerInput) {
         const speakOutput = 'yesですね。';
+        console.log(cu.getState(handlerInput));
+        console.log(cu.checkState(handlerInput,"aaa"));
+
         return handlerInput.responseBuilder
             .speak(speakOutput)
             //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
@@ -46,6 +76,7 @@ const NoIntentHandler = {
     }
 };
 
+// 暗号化対象メッセージの受付
 const AcceptMessageIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
