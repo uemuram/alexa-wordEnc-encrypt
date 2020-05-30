@@ -2,8 +2,13 @@
 // Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 // session persistence, api calls, and more.
 const Alexa = require('ask-sdk-core');
+const Axios = require('axios');
+const AWS = require('aws-sdk');
+
 const CommonUtil = require('/opt/CommonUtil');
 const cu = new CommonUtil();
+
+const API_URL = 'https://labs.goo.ne.jp/api/hiragana';
 
 /*
 /// tmp
@@ -27,7 +32,7 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-//        const speakOutput = '暗号化したいメッセージをどうぞ。';
+        //        const speakOutput = '暗号化したいメッセージをどうぞ。';
         //const speakOutput = 'ようこそ。このスキルではメッセージの暗号化を行います。暗号化したいメッセージをどうぞ。';
         console.log(cu.getHello1());
         const speakOutput = cu.getSpeech();
@@ -53,7 +58,7 @@ const YesIntentHandler = {
     handle(handlerInput) {
         const speakOutput = 'yesですね。';
         console.log(cu.getState(handlerInput));
-        console.log(cu.checkState(handlerInput,"aaa"));
+        console.log(cu.checkState(handlerInput, "aaa"));
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -82,8 +87,31 @@ const AcceptMessageIntentHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent';
     },
-    handle(handlerInput) {
+    async handle(handlerInput) {
         const speakOutput = 'メッセージを受付ました';
+
+        try {
+            // API用のキーを取得
+            const ssm = new AWS.SSM();
+            const request = {
+                Name: 'ALEXA-WORDENC-GOOAPI-KEY',
+                WithDecryption: true
+            };
+            const response = await ssm.getParameter(request).promise();
+            const apiKey = response.Parameter.Value;
+
+            const res = await Axios.post(API_URL, {
+                app_id: apiKey,
+                output_type: 'hiragana',
+                sentence: "今日は、さようなら。☆hello!"
+            });
+            const kana = res.data.converted;
+            console.log(`変換後: "${kana}"`);
+
+        } catch (error) {
+            throw new Error(`http get error: ${error}`);
+        }
+
         return handlerInput.responseBuilder
             .speak(speakOutput)
             //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
@@ -177,8 +205,8 @@ exports.handler = Alexa.SkillBuilders.custom()
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
         IntentReflectorHandler, // make sure IntentReflectorHandler is last so it doesn't override your custom intent handlers
-        ) 
+    )
     .addErrorHandlers(
         ErrorHandler,
-        )
+    )
     .lambda();
