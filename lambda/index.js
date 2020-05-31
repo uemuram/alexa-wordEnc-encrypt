@@ -11,7 +11,8 @@ const API_URL = 'https://labs.goo.ne.jp/api/hiragana';
 
 // ステータス
 const ACCEPT_MESSAGE = 0;
-
+const CONFIRM_USE_KEY = 1;
+const ACCEPT_KEY = 2;
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -35,10 +36,11 @@ const AcceptMessageIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent'
-            && cu.checkState(handlerInput,ACCEPT_MESSAGE);
+            && cu.checkState(handlerInput, ACCEPT_MESSAGE);
     },
     async handle(handlerInput) {
-        let rawMessage = handlerInput.requestEnvelope.request.intent.slots.Message.value;
+        //let rawMessage = handlerInput.requestEnvelope.request.intent.slots.Message.value;
+        let rawMessage = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Message');
         console.log(`生メッセージ: "${rawMessage}"`);
         let kanaMessage;
 
@@ -67,26 +69,49 @@ const AcceptMessageIntentHandler = {
         }
         const speakOutput = `メッセージ「${kanaMessage}」を暗号化します。複合のための鍵を設定しますか?`;
 
+        cu.setState(handlerInput, CONFIRM_USE_KEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .withSimpleCard('暗号化メッセージ', kanaMessage)
+            .reprompt('複合のための鍵を設定しますか?')
             .getResponse();
     }
 };
 
-const YesIntentHandler = {
+// 暗号化用の鍵を要求する
+const RequestKeyIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent';
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+            && cu.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
-        const speakOutput = 'yesですね。';
-        console.log(cu.getState(handlerInput));
-        console.log(cu.checkState(handlerInput, "aaa"));
+        const speakOutput = '鍵に使う4桁の数字を言ってください';
 
+        cu.setState(handlerInput, ACCEPT_KEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .reprompt(speakOutput)
+            .getResponse();
+    }
+};
+
+// 暗号化用の鍵を受け付ける
+const AcceptKeyIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptKeyIntent'
+            && cu.checkState(handlerInput, ACCEPT_KEY);
+    },
+    handle(handlerInput) {
+        let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
+        console.log("鍵 :" + key)
+        // TODO https://developer.amazon.com/ja-JP/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html
+        // digits
+        const speakOutput = '鍵を' + key + 'で受け付けました';
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            //            .reprompt(speakOutput)
             .getResponse();
     }
 };
@@ -180,15 +205,30 @@ const ErrorHandler = {
     }
 };
 
+// リクエストインターセプター(エラー調査用)
+const RequestLog = {
+    process(handlerInput) {
+        //console.log("REQUEST ENVELOPE = " + JSON.stringify(handlerInput.requestEnvelope));
+        console.log("HANDLER INPUT = " + JSON.stringify(handlerInput));
+        const requestType = Alexa.getRequestType(handlerInput.requestEnvelope);
+        console.log("REQUEST TYPE =  " + requestType);
+        if (requestType === 'IntentRequest') {
+            console.log("INTENT NAME =  " + Alexa.getIntentName(handlerInput.requestEnvelope));
+        }
+        return;
+    }
+};
+
 // The SkillBuilder acts as the entry point for your skill, routing all request and response
 // payloads to the handlers above. Make sure any new handlers or interceptors you've
 // defined are included below. The order matters - they're processed top to bottom.
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
-        YesIntentHandler,
         NoIntentHandler,
         AcceptMessageIntentHandler,
+        RequestKeyIntentHandler,
+        AcceptKeyIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
@@ -197,4 +237,5 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addErrorHandlers(
         ErrorHandler,
     )
+    .addRequestInterceptors(RequestLog)
     .lambda();

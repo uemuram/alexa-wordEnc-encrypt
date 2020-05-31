@@ -33,7 +33,19 @@
                     ],
                     "samples": [
                         " {Message} ",
-                        "xxxxxxdummyxxxxx"
+                        "xxxxxxdummyxxxxxx"
+                    ]
+                },
+                {
+                    "name": "AcceptKeyIntent",
+                    "slots": [
+                        {
+                            "name" : "Key",
+                            "type" : "AMAZON.FOUR_DIGIT_NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        " {Key} "
                     ]
                 },
                 {
