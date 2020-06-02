@@ -5,7 +5,9 @@ const Alexa = require('ask-sdk-core');
 const Axios = require('axios');
 const AWS = require('aws-sdk');
 const CommonUtil = require('/opt/CommonUtil');
-const cu = new CommonUtil();
+const u = new CommonUtil();
+const Constant = require('/opt/Constant');
+const c = new Constant();
 
 const API_URL = 'https://labs.goo.ne.jp/api/hiragana';
 
@@ -24,7 +26,7 @@ const LaunchRequestHandler = {
         //const speakOutput = 'ようこそ。このスキルではメッセージの暗号化を行います。暗号化したいメッセージをどうぞ。';
         const repromptOutput = '暗号化したいメッセージをどうぞ。'
 
-        cu.setState(handlerInput, ACCEPT_MESSAGE);
+        u.setState(handlerInput, ACCEPT_MESSAGE);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
@@ -37,7 +39,7 @@ const AcceptMessageIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent'
-            && cu.checkState(handlerInput, ACCEPT_MESSAGE);
+            && u.checkState(handlerInput, ACCEPT_MESSAGE);
     },
     async handle(handlerInput) {
         //let rawMessage = handlerInput.requestEnvelope.request.intent.slots.Message.value;
@@ -68,13 +70,23 @@ const AcceptMessageIntentHandler = {
         } catch (error) {
             throw new Error(`http get error: ${error}`);
         }
-        const speakOutput = `メッセージ「${kanaMessage}」を暗号化します。複合のための鍵を設定しますか?`;
 
-        cu.setSessionValue(handlerInput, 'MESSAGE', kanaMessage);
-        cu.setState(handlerInput, CONFIRM_USE_KEY);
+        // 対応していない文字があった場合は除外する
+        let kanaMessage2 = ''
+        for (let i = 0; i < kanaMessage.length; i++){
+            if(c.kanaList.indexOf(kanaMessage[i]) >= 0) {
+                kanaMessage2 += kanaMessage[i];
+            }
+        }
+        console.log(`不要文字除去後メッセージ: "${kanaMessage2}"`);
+
+        const speakOutput = `メッセージ「${kanaMessage2}」を暗号化します。複合のための鍵を設定しますか?`;
+
+        u.setSessionValue(handlerInput, 'MESSAGE', kanaMessage2);
+        u.setState(handlerInput, CONFIRM_USE_KEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .withSimpleCard('暗号化メッセージ', kanaMessage)
+            .withSimpleCard('暗号化メッセージ', kanaMessage2)
             .reprompt('複合のための鍵を設定しますか?')
             .getResponse();
     }
@@ -85,12 +97,12 @@ const RequestKeyIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
-            && cu.checkState(handlerInput, CONFIRM_USE_KEY);
+            && u.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
         const speakOutput = '鍵に使う4桁の数字を言ってください';
 
-        cu.setState(handlerInput, ACCEPT_KEY);
+        u.setState(handlerInput, ACCEPT_KEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(speakOutput)
@@ -103,7 +115,7 @@ const AcceptKeyAndEncryptIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptKeyIntent'
-            && cu.checkState(handlerInput, ACCEPT_KEY);
+            && u.checkState(handlerInput, ACCEPT_KEY);
     },
     handle(handlerInput) {
         let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
@@ -112,7 +124,7 @@ const AcceptKeyAndEncryptIntentHandler = {
         // digits
         const speakOutput = '鍵を' + key + 'で受け付けました。暗号化します。結果はまるまるでした。もう一度読み上げますか?';
 
-        cu.setState(handlerInput, CONFIRM_REREAD);
+        u.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt('もう一度読み上げますか?')
@@ -125,12 +137,12 @@ const EncryptIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
-            && cu.checkState(handlerInput, CONFIRM_USE_KEY);
+            && u.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
         const speakOutput = '鍵なしで暗号化します。結果はまるまるでした。もう一度読み上げますか?';
 
-        cu.setState(handlerInput, CONFIRM_REREAD);
+        u.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt('もう一度読み上げますか?')
@@ -143,7 +155,7 @@ const RereadIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
-            && cu.checkState(handlerInput, CONFIRM_REREAD);
+            && u.checkState(handlerInput, CONFIRM_REREAD);
     },
     handle(handlerInput) {
         const speakOutput = 'もう一度読み上げます。〇〇です。もう一度読み上げますか?';
@@ -160,7 +172,7 @@ const FinishIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
-            && cu.checkState(handlerInput, CONFIRM_REREAD);
+            && u.checkState(handlerInput, CONFIRM_REREAD);
     },
     handle(handlerInput) {
         const speakOutput = 'ご利用ありがとうございました';
