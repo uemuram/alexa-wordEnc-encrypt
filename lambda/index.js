@@ -13,6 +13,7 @@ const API_URL = 'https://labs.goo.ne.jp/api/hiragana';
 const ACCEPT_MESSAGE = 0;
 const CONFIRM_USE_KEY = 1;
 const ACCEPT_KEY = 2;
+const CONFIRM_REREAD = 3;
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -69,6 +70,7 @@ const AcceptMessageIntentHandler = {
         }
         const speakOutput = `メッセージ「${kanaMessage}」を暗号化します。複合のための鍵を設定しますか?`;
 
+        cu.setSessionValue(handlerInput, 'MESSAGE', kanaMessage);
         cu.setState(handlerInput, CONFIRM_USE_KEY);
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -96,8 +98,8 @@ const RequestKeyIntentHandler = {
     }
 };
 
-// 暗号化用の鍵を受け付ける
-const AcceptKeyIntentHandler = {
+// 暗号化用の鍵を受け付け、暗号化する
+const AcceptKeyAndEncryptIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptKeyIntent'
@@ -108,27 +110,67 @@ const AcceptKeyIntentHandler = {
         console.log("鍵 :" + key)
         // TODO https://developer.amazon.com/ja-JP/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html
         // digits
-        const speakOutput = '鍵を' + key + 'で受け付けました';
+        const speakOutput = '鍵を' + key + 'で受け付けました。暗号化します。結果はまるまるでした。もう一度読み上げますか?';
+
+        cu.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //            .reprompt(speakOutput)
+            .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
 };
 
-const NoIntentHandler = {
+// 暗号化用の鍵なしで暗号化する
+const EncryptIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent';
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+            && cu.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
-        const speakOutput = 'noですね。';
+        const speakOutput = '鍵なしで暗号化します。結果はまるまるでした。もう一度読み上げますか?';
+
+        cu.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
 };
+
+// 再読み上げ
+const RereadIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+            && cu.checkState(handlerInput, CONFIRM_REREAD);
+    },
+    handle(handlerInput) {
+        const speakOutput = 'もう一度読み上げます。〇〇です。もう一度読み上げますか?';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt('もう一度読み上げますか?')
+            .getResponse();
+    }
+};
+
+// 終了
+const FinishIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+            && cu.checkState(handlerInput, CONFIRM_REREAD);
+    },
+    handle(handlerInput) {
+        const speakOutput = 'ご利用ありがとうございました';
+
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .getResponse();
+    }
+};
+
 
 
 const HelpIntentHandler = {
@@ -225,10 +267,12 @@ const RequestLog = {
 exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
-        NoIntentHandler,
         AcceptMessageIntentHandler,
         RequestKeyIntentHandler,
-        AcceptKeyIntentHandler,
+        AcceptKeyAndEncryptIntentHandler,
+        EncryptIntentHandler,
+        RereadIntentHandler,
+        FinishIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
