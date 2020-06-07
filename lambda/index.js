@@ -73,8 +73,8 @@ const AcceptMessageIntentHandler = {
 
         // 対応していない文字があった場合は除外する
         let kanaMessage2 = ''
-        for (let i = 0; i < kanaMessage.length; i++){
-            if(c.kanaList.indexOf(kanaMessage[i]) >= 0) {
+        for (let i = 0; i < kanaMessage.length; i++) {
+            if (c.kanaList.indexOf(kanaMessage[i]) >= 0) {
                 kanaMessage2 += kanaMessage[i];
             }
         }
@@ -118,8 +118,17 @@ const AcceptKeyAndEncryptIntentHandler = {
             && u.checkState(handlerInput, ACCEPT_KEY);
     },
     handle(handlerInput) {
+        // 鍵の調整
         let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
-        console.log("鍵 :" + key)
+        let intKey = parseInt(key);
+        console.log("鍵 :" + key);
+        console.log("鍵(int) :" + intKey);
+
+        // 暗号化処理呼び出し
+        const message = u.getSessionValue(handlerInput, 'MESSAGE');
+        const words = u.encrypt(intKey, message);
+        console.log("暗号 :", words);
+
         // TODO https://developer.amazon.com/ja-JP/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html
         // digits
         const speakOutput = '鍵を' + key + 'で受け付けました。暗号化します。結果はまるまるでした。もう一度読み上げますか?';
@@ -140,6 +149,14 @@ const EncryptIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
+        // 鍵の調整(指定がない場合は固定の鍵)
+        let intKey = 10000;
+
+        // 暗号化処理呼び出し
+        const message = u.getSessionValue(handlerInput, 'MESSAGE');
+        const words = u.encrypt(intKey, message);
+        console.log("暗号 :", words);
+
         const speakOutput = '鍵なしで暗号化します。結果はまるまるでした。もう一度読み上げますか?';
 
         u.setState(handlerInput, CONFIRM_REREAD);
