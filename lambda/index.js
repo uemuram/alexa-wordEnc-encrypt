@@ -142,27 +142,86 @@ const AcceptKeyAndEncryptIntentHandler = {
         // 文言生成
         let speech = new Speech()
             .say('鍵を')
-            .sayAs({
-                "word": key,
-                "interpret": "digits"
-            })
+            .sayAs({ "word": key, "interpret": "digits" })
             .say('で受け付けました。暗号化の結果を読み上げます。')
             .pause('1s');
-        let cardMessage = '';
         for (let i = 0; i < words.length; i++) {
-            speech = speech.say(words[i]).pause('0.5s');
-            cardMessage += (words[i] + '\n');
+            speech = speech.say(words[i]).pause('0.4s');
         }
         speech.say('もう一度読み上げますか?');
 
+        u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard('暗号化結果', cardMessage)
+            .withSimpleCard('暗号化結果', words.join('\n'))
             .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
 };
+
+// 暗号化用の鍵を受け付け、暗号化する(2)
+// ※鍵受付中に、フリーのメッセージが入ってきたしまった場合
+const AcceptKeyFollowIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent'
+            && u.checkState(handlerInput, ACCEPT_KEY);
+    },
+    handle(handlerInput) {
+        // 鍵(4桁の数値)になっているかチェック
+        let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Message');
+        console.log("入力(鍵?) :" + key);
+        // 空白を除去
+        key = key.replace(/ /g, '');
+        // "5"が「号」になるパターンがあるので補正
+        key = key.replace(/号/g, '5');
+        console.log("入力(補正後) :" + key);
+
+        // 補正した上で「4桁の数字」にならなけばエラー返却
+        if (!key.match(/^[0-9]{4}$/)) {
+            const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
+            const speakOutput = `鍵を認識できませんでした。4桁の数字を言ってください。`;
+            console.log(intentName);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt('鍵に使う4桁の数字を言ってください')
+                .getResponse();
+        }
+
+        // 4桁の数字と判定されたため処理継続
+        // 鍵の調整
+        let intKey = parseInt(key);
+        console.log("鍵 :" + key);
+        console.log("鍵(int) :" + intKey);
+
+        // 暗号化処理呼び出し
+        const message = u.getSessionValue(handlerInput, 'MESSAGE');
+        const words = u.encrypt(intKey, message);
+        console.log("暗号 :", words);
+
+        // 文言生成
+        let speech = new Speech()
+            .say('鍵を')
+            .sayAs({ "word": key, "interpret": "digits" })
+            .say('で受け付けました。暗号化の結果を読み上げます。')
+            .pause('1s');
+        for (let i = 0; i < words.length; i++) {
+            speech = speech.say(words[i]).pause('0.4s');
+        }
+        speech.say('もう一度読み上げますか?');
+
+        u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
+        u.setState(handlerInput, CONFIRM_REREAD);
+        return handlerInput.responseBuilder
+            .speak(speech.ssml())
+            .withSimpleCard('暗号化結果', words.join('\n'))
+            .reprompt('もう一度読み上げますか?')
+            .getResponse();
+    }
+};
+
+
 
 // 暗号化用の鍵なしで暗号化する
 const EncryptIntentHandler = {
@@ -172,7 +231,7 @@ const EncryptIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_USE_KEY);
     },
     handle(handlerInput) {
-        // 鍵の調整(指定がない場合は固定の鍵)
+        // 鍵の調整(指定がないので固定の鍵)
         let intKey = c.DEFAULT_RANDOMKEY;
 
         // 暗号化処理呼び出し
@@ -180,11 +239,20 @@ const EncryptIntentHandler = {
         const words = u.encrypt(intKey, message);
         console.log("暗号 :", words);
 
-        const speakOutput = '鍵なしで暗号化します。結果はまるまるでした。もう一度読み上げますか?';
+        // 文言生成
+        let speech = new Speech()
+            .say('鍵なしで暗号化しました。結果を読み上げます。')
+            .pause('1s');
+        for (let i = 0; i < words.length; i++) {
+            speech = speech.say(words[i]).pause('0.4s');
+        }
+        speech.say('もう一度読み上げますか?');
 
+        u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
-            .speak(speakOutput)
+            .speak(speech.ssml())
+            .withSimpleCard('暗号化結果', words.join('\n'))
             .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
@@ -198,10 +266,19 @@ const RereadIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_REREAD);
     },
     handle(handlerInput) {
-        const speakOutput = 'もう一度読み上げます。〇〇です。もう一度読み上げますか?';
+
+        const words = u.getSessionValue(handlerInput, 'ENCRYPTED_WORDS');
+        // 文言生成
+        let speech = new Speech()
+            .say('もう一度読み上げます。')
+            .pause('1s');
+        for (let i = 0; i < words.length; i++) {
+            speech = speech.say(words[i]).pause('0.4s');
+        }
+        speech.say('もう一度読み上げますか?');
 
         return handlerInput.responseBuilder
-            .speak(speakOutput)
+            .speak(speech.ssml())
             .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
@@ -222,8 +299,6 @@ const FinishIntentHandler = {
             .getResponse();
     }
 };
-
-
 
 const HelpIntentHandler = {
     canHandle(handlerInput) {
@@ -322,6 +397,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         AcceptMessageIntentHandler,
         RequestKeyIntentHandler,
         AcceptKeyAndEncryptIntentHandler,
+        AcceptKeyFollowIntentHandler,
         EncryptIntentHandler,
         RereadIntentHandler,
         FinishIntentHandler,
