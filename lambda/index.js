@@ -47,7 +47,6 @@ const AcceptMessageIntentHandler = {
         console.log(`生メッセージ: "${rawMessage}"`);
         let kanaMessage;
 
-
         try {
             // API用のキーを取得
             const ssm = new AWS.SSM();
@@ -80,15 +79,25 @@ const AcceptMessageIntentHandler = {
         }
         console.log(`不要文字除去後メッセージ: "${kanaMessage2}"`);
 
-        const speakOutput = `メッセージ「${kanaMessage2}」を暗号化します。複合のための鍵を設定しますか?`;
-
-        u.setSessionValue(handlerInput, 'MESSAGE', kanaMessage2);
-        u.setState(handlerInput, CONFIRM_USE_KEY);
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .withSimpleCard('暗号化メッセージ', kanaMessage2)
-            .reprompt('複合のための鍵を設定しますか?')
-            .getResponse();
+        // 文字数の上限を超えていないかチェック
+        if (kanaMessage2.length > c.ENCRYPT_MESSAGE_LENGTH_LIMIT) {
+            const speakOutput = `メッセージが長すぎます。${c.ENCRYPT_MESSAGE_LENGTH_LIMIT}文字以内になるようにして下さい。`;
+            u.setState(handlerInput, ACCEPT_MESSAGE);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .withSimpleCard('メッセージ', kanaMessage2)
+                .reprompt('暗号化したいメッセージをどうぞ。')
+                .getResponse();
+        } else {
+            const speakOutput = `メッセージ「${kanaMessage2}」を暗号化します。複合のための鍵を設定しますか?`;
+            u.setSessionValue(handlerInput, 'MESSAGE', kanaMessage2);
+            u.setState(handlerInput, CONFIRM_USE_KEY);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .withSimpleCard('メッセージ', kanaMessage2)
+                .reprompt('複合のための鍵を設定しますか?')
+                .getResponse();
+        }
     }
 };
 
@@ -150,7 +159,7 @@ const EncryptIntentHandler = {
     },
     handle(handlerInput) {
         // 鍵の調整(指定がない場合は固定の鍵)
-        let intKey = 10000;
+        let intKey = c.DEFAULT_RANDOMKEY;
 
         // 暗号化処理呼び出し
         const message = u.getSessionValue(handlerInput, 'MESSAGE');
