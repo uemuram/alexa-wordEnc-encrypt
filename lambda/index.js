@@ -221,8 +221,6 @@ const AcceptKeyFollowIntentHandler = {
     }
 };
 
-
-
 // 暗号化用の鍵なしで暗号化する
 const EncryptIntentHandler = {
     canHandle(handlerInput) {
