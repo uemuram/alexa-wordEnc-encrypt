@@ -86,7 +86,7 @@ const AcceptMessageIntentHandler = {
             u.setState(handlerInput, ACCEPT_MESSAGE);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .withSimpleCard('メッセージ', kanaMessage2)
+                .withSimpleCard('暗号化メッセージ', kanaMessage2)
                 .reprompt('暗号化したいメッセージをどうぞ。')
                 .getResponse();
         } else {
@@ -95,7 +95,7 @@ const AcceptMessageIntentHandler = {
             u.setState(handlerInput, CONFIRM_USE_KEY);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .withSimpleCard('メッセージ', kanaMessage2)
+                .withSimpleCard('暗号化メッセージ', kanaMessage2)
                 .reprompt('複合のための鍵を設定しますか?')
                 .getResponse();
         }
@@ -146,15 +146,15 @@ const AcceptKeyAndEncryptIntentHandler = {
             .say('で受け付けました。暗号化の結果を読み上げます。')
             .pause('1s');
         for (let i = 0; i < words.length; i++) {
-            speech = speech.say(words[i]).pause('0.4s');
+            speech.say(words[i]).pause('0.4s');
         }
-        speech.say('もう一度読み上げますか?');
+        speech.say('以上です。結果はAlexaアプリのアクティビティーに通知されています。もう一度読み上げますか?');
 
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard('暗号化結果', words.join('\n'))
+            .withSimpleCard('暗号化結果(鍵:' + key + ')', words.join('\n'))
             .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
@@ -207,15 +207,16 @@ const AcceptKeyFollowIntentHandler = {
             .say('で受け付けました。暗号化の結果を読み上げます。')
             .pause('1s');
         for (let i = 0; i < words.length; i++) {
-            speech = speech.say(words[i]).pause('0.4s');
+            speech.say(words[i]).pause('0.4s');
         }
-        speech.say('もう一度読み上げますか?');
+        speech.say('以上です。結果はAlexaアプリのアクティビティーに通知されています。もう一度読み上げますか?');
+
 
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard('暗号化結果', words.join('\n'))
+            .withSimpleCard('暗号化結果(鍵:' + key + ')', words.join('\n'))
             .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
@@ -242,15 +243,15 @@ const EncryptIntentHandler = {
             .say('鍵なしで暗号化しました。結果を読み上げます。')
             .pause('1s');
         for (let i = 0; i < words.length; i++) {
-            speech = speech.say(words[i]).pause('0.4s');
+            speech.say(words[i]).pause('0.4s');
         }
-        speech.say('もう一度読み上げますか?');
+        speech.say('以上です。結果はAlexaアプリのアクティビティーに通知されています。もう一度読み上げますか?');
 
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard('暗号化結果', words.join('\n'))
+            .withSimpleCard('暗号化結果(鍵なし)', words.join('\n'))
             .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
@@ -271,9 +272,9 @@ const RereadIntentHandler = {
             .say('もう一度読み上げます。')
             .pause('1s');
         for (let i = 0; i < words.length; i++) {
-            speech = speech.say(words[i]).pause('0.4s');
+            speech.say(words[i]).pause('0.4s');
         }
-        speech.say('もう一度読み上げますか?');
+        speech.say('以上です。もう一度読み上げますか?');
 
         return handlerInput.responseBuilder
             .speak(speech.ssml())
@@ -290,7 +291,7 @@ const FinishIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_REREAD);
     },
     handle(handlerInput) {
-        const speakOutput = 'ご利用ありがとうございました';
+        const speakOutput = 'ご利用ありがとうございました。暗号を解読するには、姉妹スキルの「解読くん」をご利用下さい。';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
