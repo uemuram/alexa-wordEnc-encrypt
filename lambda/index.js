@@ -4,6 +4,7 @@
 const Alexa = require('ask-sdk-core');
 const Axios = require('axios');
 const AWS = require('aws-sdk');
+const Speech = require('ssml-builder');
 const CommonUtil = require('/opt/CommonUtil');
 const u = new CommonUtil();
 const Constant = require('/opt/Constant');
@@ -138,13 +139,26 @@ const AcceptKeyAndEncryptIntentHandler = {
         const words = u.encrypt(intKey, message);
         console.log("暗号 :", words);
 
-        // TODO https://developer.amazon.com/ja-JP/docs/alexa/custom-skills/speech-synthesis-markup-language-ssml-reference.html
-        // digits
-        const speakOutput = '鍵を' + key + 'で受け付けました。暗号化します。結果はまるまるでした。もう一度読み上げますか?';
+        // 文言生成
+        let speech = new Speech()
+            .say('鍵を')
+            .sayAs({
+                "word": key,
+                "interpret": "digits"
+            })
+            .say('で受け付けました。暗号化の結果を読み上げます。')
+            .pause('1s');
+        let cardMessage = '';
+        for (let i = 0; i < words.length; i++) {
+            speech = speech.say(words[i]).pause('0.5s');
+            cardMessage += (words[i] + '\n');
+        }
+        speech.say('もう一度読み上げますか?');
 
         u.setState(handlerInput, CONFIRM_REREAD);
         return handlerInput.responseBuilder
-            .speak(speakOutput)
+            .speak(speech.ssml())
+            .withSimpleCard('暗号化結果', cardMessage)
             .reprompt('もう一度読み上げますか?')
             .getResponse();
     }
