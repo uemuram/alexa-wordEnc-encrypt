@@ -16,7 +16,7 @@ const API_URL = 'https://labs.goo.ne.jp/api/hiragana';
 const ACCEPT_MESSAGE = 0;
 const CONFIRM_USE_KEY = 1;
 const ACCEPT_KEY = 2;
-const CONFIRM_REREAD = 3;
+const CONFIRM_READ = 3;
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -120,46 +120,6 @@ const RequestKeyIntentHandler = {
     }
 };
 
-// 暗号化用の鍵を受け付け、暗号化する
-const AcceptKeyAndEncryptIntentHandler = {
-    canHandle(handlerInput) {
-        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptKeyIntent'
-            && u.checkState(handlerInput, ACCEPT_KEY);
-    },
-    handle(handlerInput) {
-        // 鍵の調整
-        let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
-        let intKey = parseInt(key);
-        console.log("鍵 :" + key);
-        console.log("鍵(int) :" + intKey);
-
-        // 暗号化処理呼び出し
-        const message = u.getSessionValue(handlerInput, 'MESSAGE');
-        const words = u.encrypt(intKey, message);
-        console.log("暗号 :", words);
-
-        // 文言生成
-        let speech = new Speech()
-            .say('鍵を')
-            .sayAs({ "word": key, "interpret": "digits" })
-            .say('で受け付けました。暗号化の結果を読み上げます。')
-            .pause('1s');
-        for (let i = 0; i < words.length; i++) {
-            speech.say(words[i]).pause('0.4s');
-        }
-        speech.say('以上です。結果はAlexaアプリのアクティビティーに通知されています。もう一度読み上げますか?');
-
-        u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
-        u.setState(handlerInput, CONFIRM_REREAD);
-        return handlerInput.responseBuilder
-            .speak(speech.ssml())
-            .withSimpleCard('暗号化結果(鍵:' + key + ')', words.join('\n'))
-            .reprompt('もう一度読み上げますか?')
-            .getResponse();
-    }
-};
-
 // 暗号化用の鍵を受け付け、暗号化する(2)
 // ※鍵受付中に、フリーのメッセージが入ってきたしまった場合
 const AcceptKeyFollowIntentHandler = {
@@ -201,75 +161,89 @@ const AcceptKeyFollowIntentHandler = {
         console.log("暗号 :", words);
 
         // 文言生成
-        let speech = new Speech()
-            .say('鍵を')
+        speech.say('鍵')
             .sayAs({ "word": key, "interpret": "digits" })
-            .say('で受け付けました。暗号化の結果を読み上げます。')
+            .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化メッセージを読み上げますか?')
             .pause('1s');
-        for (let i = 0; i < words.length; i++) {
-            speech.say(words[i]).pause('0.4s');
-        }
-        speech.say('以上です。結果はAlexaアプリのアクティビティーに通知されています。もう一度読み上げますか?');
-
+        cardTitle = '暗号化結果(鍵:' + key + ')';
 
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
-        u.setState(handlerInput, CONFIRM_REREAD);
+        u.setState(handlerInput, CONFIRM_READ);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard('暗号化結果(鍵:' + key + ')', words.join('\n'))
-            .reprompt('もう一度読み上げますか?')
+            .withSimpleCard(cardTitle, words.join('\n'))
+            .reprompt('暗号化メッセージを読み上げますか?')
             .getResponse();
     }
 };
 
-// 暗号化用の鍵なしで暗号化する
+// 暗号化する
 const EncryptIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
-            && u.checkState(handlerInput, CONFIRM_USE_KEY);
+            && (
+                // 鍵ありで暗号化する場合
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptKeyIntent'
+                    && u.checkState(handlerInput, ACCEPT_KEY))
+                ||
+                // 鍵なしで暗号化する場合
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
+            );
     },
     handle(handlerInput) {
-        // 鍵の調整(指定がないので固定の鍵)
-        let intKey = c.DEFAULT_RANDOMKEY;
+
+        // 鍵の有無で分岐
+        let intKey;
+        let speech = new Speech();
+        let cardTitle;
+        if (u.checkState(handlerInput, ACCEPT_KEY)) {
+            // 鍵ありの場合
+            let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
+            let intKey = parseInt(key);
+            console.log('鍵 :' + key);
+            console.log('鍵(int) :' + intKey);
+            speech.say('鍵')
+                .sayAs({ "word": key, "interpret": "digits" })
+                .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化メッセージを読み上げますか?')
+                .pause('1s');
+            cardTitle = '暗号化結果(鍵:' + key + ')';
+        } else {
+            // 鍵なしの場合
+            intKey = c.DEFAULT_RANDOMKEY;
+            console.log('鍵(デフォルト) :' + intKey);
+            speech.say('鍵なしでメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化メッセージを読み上げますか?')
+                .pause('1s');
+            cardTitle = '暗号化結果(鍵なし)';
+        }
 
         // 暗号化処理呼び出し
         const message = u.getSessionValue(handlerInput, 'MESSAGE');
         const words = u.encrypt(intKey, message);
         console.log("暗号 :", words);
 
-        // 文言生成
-        let speech = new Speech()
-            .say('鍵なしで暗号化しました。結果を読み上げます。')
-            .pause('1s');
-        for (let i = 0; i < words.length; i++) {
-            speech.say(words[i]).pause('0.4s');
-        }
-        speech.say('以上です。結果はAlexaアプリのアクティビティーに通知されています。もう一度読み上げますか?');
-
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
-        u.setState(handlerInput, CONFIRM_REREAD);
+        u.setState(handlerInput, CONFIRM_READ);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard('暗号化結果(鍵なし)', words.join('\n'))
-            .reprompt('もう一度読み上げますか?')
+            .withSimpleCard(cardTitle, words.join('\n'))
+            .reprompt('暗号化メッセージを読み上げますか?')
             .getResponse();
     }
 };
 
-// 再読み上げ
-const RereadIntentHandler = {
+// 暗号化メッセージ読み上げ
+const ReadIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
-            && u.checkState(handlerInput, CONFIRM_REREAD);
+            && u.checkState(handlerInput, CONFIRM_READ);
     },
     handle(handlerInput) {
-
         const words = u.getSessionValue(handlerInput, 'ENCRYPTED_WORDS');
         // 文言生成
         let speech = new Speech()
-            .say('もう一度読み上げます。')
+            .say('暗号化メッセージを読み上げます。')
             .pause('1s');
         for (let i = 0; i < words.length; i++) {
             speech.say(words[i]).pause('0.4s');
@@ -288,7 +262,7 @@ const FinishIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
-            && u.checkState(handlerInput, CONFIRM_REREAD);
+            && u.checkState(handlerInput, CONFIRM_READ);
     },
     handle(handlerInput) {
         const speakOutput = 'ご利用ありがとうございました。暗号を解読するには、姉妹スキルの「解読くん」をご利用下さい。';
@@ -395,10 +369,9 @@ exports.handler = Alexa.SkillBuilders.custom()
         LaunchRequestHandler,
         AcceptMessageIntentHandler,
         RequestKeyIntentHandler,
-        AcceptKeyAndEncryptIntentHandler,
         AcceptKeyFollowIntentHandler,
         EncryptIntentHandler,
-        RereadIntentHandler,
+        ReadIntentHandler,
         FinishIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
