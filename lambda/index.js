@@ -161,9 +161,10 @@ const AcceptKeyFollowIntentHandler = {
         console.log("暗号 :", words);
 
         // 文言生成
-        speech.say('鍵')
+        let speech = new Speech()
+            .say('鍵')
             .sayAs({ "word": key, "interpret": "digits" })
-            .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化メッセージを読み上げますか?')
+            .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化結果を読み上げますか?')
             .pause('1s');
         cardTitle = '暗号化結果(鍵:' + key + ')';
 
@@ -172,7 +173,7 @@ const AcceptKeyFollowIntentHandler = {
         return handlerInput.responseBuilder
             .speak(speech.ssml())
             .withSimpleCard(cardTitle, words.join('\n'))
-            .reprompt('暗号化メッセージを読み上げますか?')
+            .reprompt('暗号化結果を読み上げますか?')
             .getResponse();
     }
 };
@@ -205,14 +206,14 @@ const EncryptIntentHandler = {
             console.log('鍵(int) :' + intKey);
             speech.say('鍵')
                 .sayAs({ "word": key, "interpret": "digits" })
-                .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化メッセージを読み上げますか?')
+                .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化結果を読み上げますか?')
                 .pause('1s');
             cardTitle = '暗号化結果(鍵:' + key + ')';
         } else {
             // 鍵なしの場合
             intKey = c.DEFAULT_RANDOMKEY;
             console.log('鍵(デフォルト) :' + intKey);
-            speech.say('鍵なしでメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化メッセージを読み上げますか?')
+            speech.say('鍵なしでメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化結果を読み上げますか?')
                 .pause('1s');
             cardTitle = '暗号化結果(鍵なし)';
         }
@@ -227,12 +228,12 @@ const EncryptIntentHandler = {
         return handlerInput.responseBuilder
             .speak(speech.ssml())
             .withSimpleCard(cardTitle, words.join('\n'))
-            .reprompt('暗号化メッセージを読み上げますか?')
+            .reprompt('暗号化結果を読み上げますか?')
             .getResponse();
     }
 };
 
-// 暗号化メッセージ読み上げ
+// 結果化結果読み上げ
 const ReadIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -243,7 +244,7 @@ const ReadIntentHandler = {
         const words = u.getSessionValue(handlerInput, 'ENCRYPTED_WORDS');
         // 文言生成
         let speech = new Speech()
-            .say('暗号化メッセージを読み上げます。')
+            .say('暗号化結果を読み上げます。')
             .pause('1s');
         for (let i = 0; i < words.length; i++) {
             speech.say(words[i]).pause('0.4s');
