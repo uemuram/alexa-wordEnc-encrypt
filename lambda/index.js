@@ -201,7 +201,7 @@ const EncryptIntentHandler = {
         if (u.checkState(handlerInput, ACCEPT_KEY)) {
             // 鍵ありの場合
             let key = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Key');
-            let intKey = parseInt(key);
+            intKey = parseInt(key);
             console.log('鍵 :' + key);
             console.log('鍵(int) :' + intKey);
             speech.say('鍵')
