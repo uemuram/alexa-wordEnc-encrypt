@@ -295,7 +295,7 @@ const CancelAndStopIntentHandler = {
                 || Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
-        const speakOutput = 'Goodbye!';
+        const speakOutput = 'ご利用ありがとうございました。';
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .getResponse();
@@ -321,11 +321,11 @@ const IntentReflectorHandler = {
     },
     handle(handlerInput) {
         const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
-        const speakOutput = `You just triggered ${intentName}`;
-
+        const speakOutput = `想定外の呼び出しが発生しました。もう一度お試しください。`;
+        console.log(intentName);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            //.reprompt('add a reprompt if you want to keep the session open for the user to respond')
+            .reprompt('もう一度お試しください。')
             .getResponse();
     }
 };
@@ -339,7 +339,7 @@ const ErrorHandler = {
     },
     handle(handlerInput, error) {
         console.log(`~~~~ Error handled: ${error.stack}`);
-        const speakOutput = `Sorry, I had trouble doing what you asked. Please try again.`;
+        const speakOutput = `エラーが発生しました。もう一度お試しください。`;
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
