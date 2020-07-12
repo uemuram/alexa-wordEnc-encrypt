@@ -86,7 +86,6 @@ const AcceptMessageIntentHandler = {
             u.setState(handlerInput, ACCEPT_MESSAGE);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .withSimpleCard('暗号化メッセージ', kanaMessage2)
                 .reprompt('暗号化したいメッセージをどうぞ。')
                 .getResponse();
         } else {
@@ -343,7 +342,7 @@ const ErrorHandler = {
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt("もう一度お試しください。")
             .getResponse();
     }
 };
