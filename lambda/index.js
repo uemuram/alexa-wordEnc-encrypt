@@ -25,9 +25,10 @@ const LaunchRequestHandler = {
     handle(handlerInput) {
         const speakOutput = 'ようこそ。暗号化したいメッセージをどうぞ。';
         //const speakOutput = 'ようこそ。このスキルではメッセージの暗号化を行います。暗号化したいメッセージをどうぞ。';
-        const repromptOutput = '暗号化したいメッセージをどうぞ。'
+        const repromptOutput = '暗号化したいメッセージをどうぞ。';
 
         u.setState(handlerInput, ACCEPT_MESSAGE);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
@@ -83,19 +84,25 @@ const AcceptMessageIntentHandler = {
         // 文字数の上限を超えていないかチェック
         if (kanaMessage2.length > c.ENCRYPT_MESSAGE_LENGTH_LIMIT) {
             const speakOutput = `メッセージが長すぎます。${c.ENCRYPT_MESSAGE_LENGTH_LIMIT}文字以内になるようにして下さい。`;
+            const repromptOutput = '暗号化したいメッセージをどうぞ。'
+
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
             u.setState(handlerInput, ACCEPT_MESSAGE);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('暗号化したいメッセージをどうぞ。')
+                .reprompt(repromptOutput)
                 .getResponse();
         } else {
             const speakOutput = `メッセージ「${kanaMessage2}」を暗号化します。複合のための鍵を設定しますか?`;
+            const repromptOutput = '複合のための鍵を設定しますか?'
+
             u.setSessionValue(handlerInput, 'MESSAGE', kanaMessage2);
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
             u.setState(handlerInput, CONFIRM_USE_KEY);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .withSimpleCard('暗号化メッセージ', kanaMessage2)
-                .reprompt('複合のための鍵を設定しますか?')
+                .reprompt(repromptOutput)
                 .getResponse();
         }
     }
@@ -110,11 +117,13 @@ const RequestKeyIntentHandler = {
     },
     handle(handlerInput) {
         const speakOutput = '鍵に使う4桁の数字を言ってください';
+        const repromptOutput = speakOutput;
 
         u.setState(handlerInput, ACCEPT_KEY);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt(speakOutput)
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -141,10 +150,13 @@ const AcceptKeyFollowIntentHandler = {
         if (!key.match(/^[0-9]{4}$/)) {
             const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
             const speakOutput = `鍵を認識できませんでした。4桁の数字を言ってください。`;
+            const repromptOutput = '鍵に使う4桁の数字を言ってください';
+
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
             console.log(intentName);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .reprompt('鍵に使う4桁の数字を言ってください')
+                .reprompt(repromptOutput)
                 .getResponse();
         }
 
@@ -166,13 +178,15 @@ const AcceptKeyFollowIntentHandler = {
             .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化結果を読み上げますか?')
             .pause('1s');
         cardTitle = '暗号化結果(鍵:' + key + ')';
+        const repromptOutput = '暗号化結果を読み上げますか?';
 
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         u.setState(handlerInput, CONFIRM_READ);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
             .withSimpleCard(cardTitle, words.join('\n'))
-            .reprompt('暗号化結果を読み上げますか?')
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -221,13 +235,15 @@ const EncryptIntentHandler = {
         const message = u.getSessionValue(handlerInput, 'MESSAGE');
         const words = u.encrypt(intKey, message);
         console.log("暗号 :", words);
+        const repromptOutput = '暗号化結果を読み上げますか?';
 
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         u.setState(handlerInput, CONFIRM_READ);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
             .withSimpleCard(cardTitle, words.join('\n'))
-            .reprompt('暗号化結果を読み上げますか?')
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -249,10 +265,12 @@ const ReadIntentHandler = {
             speech.say(words[i]).pause('0.4s');
         }
         speech.say('以上です。もう一度読み上げますか?');
+        const repromptOutput = 'もう一度読み上げますか?';
 
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .reprompt('もう一度読み上げますか?')
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -320,11 +338,13 @@ const IntentReflectorHandler = {
     },
     handle(handlerInput) {
         const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
-        const speakOutput = `想定外の呼び出しが発生しました。もう一度お試しください。`;
+        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+
         console.log(intentName);
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt('もう一度お試しください。')
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
@@ -338,11 +358,12 @@ const ErrorHandler = {
     },
     handle(handlerInput, error) {
         console.log(`~~~~ Error handled: ${error.stack}`);
-        const speakOutput = `エラーが発生しました。もう一度お試しください。`;
+        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        const speakOutput = `エラーが発生しました。` + repromptOutput;
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
-            .reprompt("もう一度お試しください。")
+            .reprompt(repromptOutput)
             .getResponse();
     }
 };
