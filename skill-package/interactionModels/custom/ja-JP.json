@@ -1,7 +1,7 @@
 {
     "interactionModel": {
         "languageModel": {
-            "invocationName": "暗号くん",
+            "invocationName": "暗号作成くん",
             "intents": [
                 {
                     "name": "AMAZON.CancelIntent",

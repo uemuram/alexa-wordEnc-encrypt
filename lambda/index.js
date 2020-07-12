@@ -92,8 +92,8 @@ const AcceptMessageIntentHandler = {
                 .reprompt(repromptOutput)
                 .getResponse();
         } else {
-            const speakOutput = `メッセージ「${kanaMessage2}」を暗号化します。複合のための鍵を設定しますか?`;
-            const repromptOutput = '複合のための鍵を設定しますか?'
+            const speakOutput = `メッセージ「${kanaMessage2}」を暗号化します。解読のための鍵を設定しますか?`;
+            const repromptOutput = '解読のための鍵を設定しますか?'
 
             u.setSessionValue(handlerInput, 'MESSAGE', kanaMessage2);
             u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
@@ -282,7 +282,7 @@ const FinishIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_READ);
     },
     handle(handlerInput) {
-        const speakOutput = 'ご利用ありがとうございました。暗号を解読するには、姉妹スキルの「解読くん」をご利用下さい。';
+        const speakOutput = 'ご利用ありがとうございました。暗号を解読するには、姉妹スキルの「暗号解読くん」をご利用下さい。';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
