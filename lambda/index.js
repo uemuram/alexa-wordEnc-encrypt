@@ -296,12 +296,24 @@ const HelpIntentHandler = {
             && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
-        const speakOutput = 'You can say hello to me! How can I help?';
+        const speakOutput = `
+            このスキルでは、任意のメッセージを暗号化します。スキルの支持に従って暗号化してください。
+            暗号化できるメッセージはひらがな${c.ENCRYPT_MESSAGE_LENGTH_LIMIT}文字以内です。
+            また、解読のための鍵として4桁の数字を設定することもできます。
+            暗号化の結果は複数の単語の組み合わせになります。
+            暗号を解読するには、姉妹スキルの「暗号解読くん」をご利用ください。`;
+        let repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
 
-        return handlerInput.responseBuilder
-            .speak(speakOutput)
-            .reprompt(speakOutput)
-            .getResponse();
+        if (repromptOutput) {
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt(repromptOutput)
+                .getResponse();
+        } else {
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .getResponse();
+        }
     }
 };
 const CancelAndStopIntentHandler = {
