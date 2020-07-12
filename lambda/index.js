@@ -23,8 +23,7 @@ const LaunchRequestHandler = {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'LaunchRequest';
     },
     handle(handlerInput) {
-        const speakOutput = 'ようこそ。暗号化したいメッセージをどうぞ。';
-        //const speakOutput = 'ようこそ。このスキルではメッセージの暗号化を行います。暗号化したいメッセージをどうぞ。';
+        const speakOutput = 'ようこそ。このスキルではメッセージの暗号化を行います。暗号化したいメッセージをどうぞ。';
         const repromptOutput = '暗号化したいメッセージをどうぞ。';
 
         u.setState(handlerInput, ACCEPT_MESSAGE);
@@ -338,10 +337,25 @@ const IntentReflectorHandler = {
     },
     handle(handlerInput) {
         const intentName = Alexa.getIntentName(handlerInput.requestEnvelope);
-        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
-        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
-
         console.log(intentName);
+
+        let repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        let speakOutput;
+
+        // リプロンプトメッセージがとれなかった場合は、スキルを最初から始める
+        if (!repromptOutput) {
+            speakOutput = 'ようこそ。このスキルではメッセージの暗号化を行います。暗号化したいメッセージをどうぞ。';
+            repromptOutput = '暗号化したいメッセージをどうぞ。';
+
+            u.setState(handlerInput, ACCEPT_MESSAGE);
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt(repromptOutput)
+                .getResponse();
+        }
+
+        speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
