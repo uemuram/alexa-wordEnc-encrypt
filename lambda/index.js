@@ -367,6 +367,7 @@ const IntentReflectorHandler = {
                 .getResponse();
         }
 
+        console.log('想定外呼び出し発生');
         speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
         return handlerInput.responseBuilder
             .speak(speakOutput)

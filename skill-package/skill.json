@@ -5,18 +5,16 @@
         "ja-JP": {
           "summary": "Sample Short Description",
           "examplePhrases": [
-            "Alexa open hello world",
-            "hello",
-            "help"
+            "アレクサ、暗号作成くんを開いて"
           ],
           "name": "暗号作成くん",
           "description": "Sample Full Description"
         }
       },
-      "isAvailableWorldwide": true,
+      "isAvailableWorldwide": false,
       "testingInstructions": "Sample Testing Instructions.",
       "category": "KNOWLEDGE_AND_TRIVIA",
-      "distributionCountries": []
+      "distributionCountries": ["JP"]
     },
     "apis": {
       "custom": {
@@ -25,6 +23,13 @@
         }
       }
     },
-    "manifestVersion": "1.0"
+    "manifestVersion": "1.0",
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": false,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false
+    }
   }
 }
