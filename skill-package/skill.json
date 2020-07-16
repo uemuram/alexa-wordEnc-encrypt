@@ -3,19 +3,24 @@
     "publishingInformation": {
       "locales": {
         "ja-JP": {
-          "summary": "Sample Short Description",
+          "summary": "メッセージを暗号化するスキルです。",
           "examplePhrases": [
             "アレクサ、暗号作成くんを開いて"
           ],
           "name": "暗号作成くん",
+          "keywords": [
+            "暗号",
+            "暗号化",
+            "暗号作成"
+          ],
           "smallIconUri": "https://uemuram.github.io/alexa-wordEnc-encrypt/icon108.png",
           "largeIconUri": "https://uemuram.github.io/alexa-wordEnc-encrypt/icon512.png",
           "description": "Sample Full Description"
         }
       },
       "isAvailableWorldwide": false,
-      "testingInstructions": "Sample Testing Instructions.",
-      "category": "KNOWLEDGE_AND_TRIVIA",
+      "testingInstructions": "Alexa対応デバイス以外に必要なものはありません。フレーズ例にしたがって発話するだけでテストできます。",
+      "category": "COMMUNICATION",
       "distributionCountries": [
         "JP"
       ]
