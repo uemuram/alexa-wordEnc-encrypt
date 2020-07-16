@@ -8,13 +8,17 @@
             "アレクサ、暗号作成くんを開いて"
           ],
           "name": "暗号作成くん",
+          "smallIconUri": "https://uemuram.github.io/alexa-wordEnc-encrypt/icon108.png",
+          "largeIconUri": "https://uemuram.github.io/alexa-wordEnc-encrypt/icon512.png",
           "description": "Sample Full Description"
         }
       },
       "isAvailableWorldwide": false,
       "testingInstructions": "Sample Testing Instructions.",
       "category": "KNOWLEDGE_AND_TRIVIA",
-      "distributionCountries": ["JP"]
+      "distributionCountries": [
+        "JP"
+      ]
     },
     "apis": {
       "custom": {
