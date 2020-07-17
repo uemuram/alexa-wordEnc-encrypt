@@ -128,7 +128,7 @@ const RequestKeyIntentHandler = {
 };
 
 // 暗号化用の鍵を受け付け、暗号化する(2)
-// ※鍵受付中に、フリーのメッセージが入ってきたしまった場合
+// ※鍵受付中に、フリーのメッセージが入ってきてしまった場合
 const AcceptKeyFollowIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -301,6 +301,38 @@ const FinishIntentHandler = {
     }
 };
 
+// 終了(2)
+// 終了確認中に、フリーのメッセージが入ってきてしまった場合
+const FinishFollowIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent'
+            && u.checkState(handlerInput, CONFIRM_READ);
+    },
+    handle(handlerInput) {
+        // 「いいえ」に近い言葉になっているか確認
+        let message = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Message');
+        console.log("入力(メッセージ?) :" + message);
+        // 空白を除去
+        message = message.replace(/ /g, '');
+        if (c.NO_MESSAGES.indexOf(message) != -1) {
+            console.log("「いいえ」と判定");
+            const speakOutput = 'ご利用ありがとうございました。暗号を解読するには、姉妹スキルの「暗号解読くん」をご利用下さい。';
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .getResponse();
+        }
+
+        const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+        console.log('想定外呼び出し発生2');
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(repromptOutput)
+            .getResponse();
+    }
+};
+
 const HelpIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
@@ -432,6 +464,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         EncryptIntentHandler,
         ReadIntentHandler,
         FinishIntentHandler,
+        FinishFollowIntentHandler,
         HelpIntentHandler,
         CancelAndStopIntentHandler,
         SessionEndedRequestHandler,
