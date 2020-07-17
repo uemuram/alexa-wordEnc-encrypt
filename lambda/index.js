@@ -239,9 +239,16 @@ const EncryptIntentHandler = {
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         u.setState(handlerInput, CONFIRM_READ);
+
+        // カードメッセージ作成
+        let cardWords = [];
+        for (let i = 0; i < words.length; i++) {
+            cardWords.push(words[i].word);
+        }
+
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard(cardTitle, words.join('\n'))
+            .withSimpleCard(cardTitle, cardWords.join('\n'))
             .reprompt(repromptOutput)
             .getResponse();
     }
@@ -261,7 +268,11 @@ const ReadIntentHandler = {
             .say('暗号化結果を読み上げます。')
             .pause('1s');
         for (let i = 0; i < words.length; i++) {
-            speech.say(words[i]).pause('0.4s');
+            if (words[i].use_yomi) {
+                speech.say(words[i].yomi).pause('0.4s');
+            } else {
+                speech.say(words[i].word).pause('0.4s');
+            }
         }
         speech.say('以上です。もう一度読み上げますか?');
         const repromptOutput = 'もう一度読み上げますか?';
