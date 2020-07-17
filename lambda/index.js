@@ -202,9 +202,33 @@ const EncryptIntentHandler = {
                 // 鍵なしで暗号化する場合
                 (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
                     && u.checkState(handlerInput, CONFIRM_USE_KEY))
+                ||
+                // 鍵なしで暗号化する場合(メッセージとして認識された場合)
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
             );
     },
     handle(handlerInput) {
+
+        // メッセージとして認識された場合、「いいえ」相当かどうか判定
+        if (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent') {
+            // 「いいえ」に近い言葉になっているか確認
+            let message = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Message');
+            console.log("入力(メッセージ?) :" + message);
+            // 空白を除去
+            message = message.replace(/ /g, '');
+            if (c.NO_MESSAGES.indexOf(message) == -1) {
+                console.log("「いいえ」ではないと判定");
+                const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
+                const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+                console.log('想定外呼び出し発生3');
+                return handlerInput.responseBuilder
+                    .speak(speakOutput)
+                    .reprompt(repromptOutput)
+                    .getResponse();
+            }
+            console.log("「いいえ」だと判定");
+        }
 
         // 鍵の有無で分岐
         let intKey;
