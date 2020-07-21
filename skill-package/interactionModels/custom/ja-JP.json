@@ -49,6 +49,50 @@
                     ]
                 },
                 {
+                    "name": "ConfirmUseKeyYesIntent",
+                    "slots": [
+                    ],
+                    "samples": [
+                        "設定する",
+                        "設定して",
+                        "設定します",
+                        "設定してください"
+                    ]
+                },
+                {
+                    "name": "ConfirmUseKeyNoIntent",
+                    "slots": [
+                    ],
+                    "samples": [
+                        "設定しない",
+                        "設定しないで",
+                        "設定しません",
+                        "設定しないでください"
+                    ]
+                },
+                {
+                    "name": "ConfirmReadYesIntent",
+                    "slots": [
+                    ],
+                    "samples": [
+                        "読み上げる",
+                        "読み上げて",
+                        "読み上げます",
+                        "読み上げてください"
+                    ]
+                },
+                {
+                    "name": "ConfirmReadNoIntent",
+                    "slots": [
+                    ],
+                    "samples": [
+                        "読み上げない",
+                        "読み上げないで",
+                        "読み上げません",
+                        "読み上げないでください"
+                    ]
+                },
+                {
                     "name": "AMAZON.NavigateHomeIntent",
                     "samples": []
                 }

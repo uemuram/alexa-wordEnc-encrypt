@@ -50,7 +50,7 @@ const AcceptMessageIntentHandler = {
 
         // 不適切な言葉がないかチェック
         if (u.isInappropriate(rawMessage)) {
-            const speakOutput = `不適切な内容が含まれています。メッセージを見直してください`;
+            const speakOutput = `不適切な内容が含まれています。メッセージを見直してください。暗号化したいメッセージをどうぞ。`;
             const repromptOutput = '暗号化したいメッセージをどうぞ。'
 
             u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
@@ -124,8 +124,13 @@ const AcceptMessageIntentHandler = {
 const RequestKeyIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
-            && u.checkState(handlerInput, CONFIRM_USE_KEY);
+            && (
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
+                ||
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'ConfirmUseKeyYesIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
+            );
     },
     handle(handlerInput) {
         const speakOutput = '鍵に使う4桁の数字を言ってください';
@@ -216,6 +221,10 @@ const EncryptIntentHandler = {
                 (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
                     && u.checkState(handlerInput, CONFIRM_USE_KEY))
                 ||
+                // 鍵なしで暗号化する場合
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'ConfirmUseKeyNoIntent'
+                    && u.checkState(handlerInput, CONFIRM_USE_KEY))
+                ||
                 // 鍵なしで暗号化する場合(メッセージとして認識された場合)
                 (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent'
                     && u.checkState(handlerInput, CONFIRM_USE_KEY))
@@ -295,8 +304,13 @@ const EncryptIntentHandler = {
 const ReadIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
-            && u.checkState(handlerInput, CONFIRM_READ);
+            && (
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+                    && u.checkState(handlerInput, CONFIRM_READ))
+                ||
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'ConfirmReadYesIntent'
+                    && u.checkState(handlerInput, CONFIRM_READ))
+            );
     },
     handle(handlerInput) {
         const words = u.getSessionValue(handlerInput, 'ENCRYPTED_WORDS');
@@ -326,8 +340,13 @@ const ReadIntentHandler = {
 const FinishIntentHandler = {
     canHandle(handlerInput) {
         return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
-            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
-            && u.checkState(handlerInput, CONFIRM_READ);
+            && (
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+                    && u.checkState(handlerInput, CONFIRM_READ))
+                ||
+                (Alexa.getIntentName(handlerInput.requestEnvelope) === 'ConfirmReadNoIntent'
+                    && u.checkState(handlerInput, CONFIRM_READ))
+            );
     },
     handle(handlerInput) {
         const speakOutput = 'ご利用ありがとうございました。暗号を解読する方法は、このスキルの説明文をご確認下さい。';
