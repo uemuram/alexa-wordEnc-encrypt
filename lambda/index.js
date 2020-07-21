@@ -48,6 +48,19 @@ const AcceptMessageIntentHandler = {
         console.log(`生メッセージ: "${rawMessage}"`);
         let kanaMessage;
 
+        // 不適切な言葉がないかチェック
+        if (u.isInappropriate(rawMessage)) {
+            const speakOutput = `不適切な内容が含まれています。メッセージを見直してください`;
+            const repromptOutput = '暗号化したいメッセージをどうぞ。'
+
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+            u.setState(handlerInput, ACCEPT_MESSAGE);
+            return handlerInput.responseBuilder
+                .speak(speakOutput)
+                .reprompt(repromptOutput)
+                .getResponse();
+        }
+
         try {
             // API用のキーを取得
             const ssm = new AWS.SSM();
@@ -169,6 +182,7 @@ const AcceptKeyFollowIntentHandler = {
         const message = u.getSessionValue(handlerInput, 'MESSAGE');
         const words = u.encrypt(intKey, message);
         console.log("暗号 :", words);
+        const repromptOutput = '暗号化結果を読み上げますか?';
 
         // 文言生成
         let speech = new Speech()
@@ -177,7 +191,6 @@ const AcceptKeyFollowIntentHandler = {
             .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化結果を読み上げますか?')
             .pause('1s');
         cardTitle = '暗号化結果(鍵:' + key + ')';
-        const repromptOutput = '暗号化結果を読み上げますか?';
 
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
