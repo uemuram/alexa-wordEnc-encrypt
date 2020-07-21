@@ -28,7 +28,7 @@
                     "slots": [
                         {
                             "name" : "Message",
-                            "type" : "AMAZON.SearchQuery"
+                            "type" : "AMAZON.Color"
                         }
                     ],
                     "samples": [
