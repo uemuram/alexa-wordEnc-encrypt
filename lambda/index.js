@@ -330,7 +330,7 @@ const FinishIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_READ);
     },
     handle(handlerInput) {
-        const speakOutput = 'ご利用ありがとうございました。暗号を解読するには、姉妹スキルの「暗号解読くん」をご利用下さい。';
+        const speakOutput = 'ご利用ありがとうございました。暗号を解読する方法は、このスキルの説明文をご確認下さい。';
 
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -354,7 +354,7 @@ const FinishFollowIntentHandler = {
         message = message.replace(/ /g, '');
         if (c.NO_MESSAGES.indexOf(message) != -1) {
             console.log("「いいえ」と判定");
-            const speakOutput = 'ご利用ありがとうございました。暗号を解読するには、姉妹スキルの「暗号解読くん」をご利用下さい。';
+            const speakOutput = 'ご利用ありがとうございました。暗号を解読する方法は、このスキルの説明文をご確認下さい。';
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .getResponse();
@@ -381,12 +381,12 @@ const HelpIntentHandler = {
             暗号化できるメッセージはひらがな${c.ENCRYPT_MESSAGE_LENGTH_LIMIT}文字以内です。
             また、解読のための鍵として4桁の数字を設定することもできます。
             暗号化の結果は複数の単語の組み合わせになります。
-            暗号を解読するには、姉妹スキルの「暗号解読くん」をご利用ください。`;
+            暗号を解読する方法は、このスキルの説明文に記載されていますのでそちらをご確認ください。`;
         let repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
 
         if (repromptOutput) {
             return handlerInput.responseBuilder
-                .speak(speakOutput)
+                .speak(speakOutput + repromptOutput)
                 .reprompt(repromptOutput)
                 .getResponse();
         } else {
