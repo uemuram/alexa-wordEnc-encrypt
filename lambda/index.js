@@ -232,13 +232,29 @@ const EncryptIntentHandler = {
     },
     handle(handlerInput) {
 
-        // メッセージとして認識された場合、「いいえ」相当かどうか判定
+        // メッセージとして認識された場合、「はい」「いいえ」相当かどうか判定
         if (Alexa.getIntentName(handlerInput.requestEnvelope) === 'AcceptMessageIntent') {
-            // 「いいえ」に近い言葉になっているか確認
             let message = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Message');
             console.log("入力(メッセージ?) :" + message);
             // 空白を除去
             message = message.replace(/ /g, '');
+
+            // 「はい」に近い言葉になっているか確認
+            if (c.YES_MESSAGES.indexOf(message) != -1) {
+                console.log("「はい」と判定");
+                const speakOutput = '鍵に使う4桁の数字を言ってください';
+                const repromptOutput = speakOutput;
+
+                // 鍵受付状態に遷移
+                u.setState(handlerInput, ACCEPT_KEY);
+                u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+                return handlerInput.responseBuilder
+                    .speak(speakOutput)
+                    .reprompt(repromptOutput)
+                    .getResponse();
+            }
+
+            // 「いいえ」に近い言葉になっているか確認
             if (c.NO_MESSAGES.indexOf(message) == -1) {
                 console.log("「いいえ」ではないと判定");
                 const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
@@ -249,7 +265,7 @@ const EncryptIntentHandler = {
                     .reprompt(repromptOutput)
                     .getResponse();
             }
-            console.log("「いいえ」だと判定");
+            console.log("「いいえ」と判定");
         }
 
         // 鍵の有無で分岐
@@ -366,11 +382,36 @@ const FinishFollowIntentHandler = {
             && u.checkState(handlerInput, CONFIRM_READ);
     },
     handle(handlerInput) {
-        // 「いいえ」に近い言葉になっているか確認
+        // メッセージとして認識された場合、「はい」「いいえ」相当かどうか判定
         let message = Alexa.getSlotValue(handlerInput.requestEnvelope, 'Message');
         console.log("入力(メッセージ?) :" + message);
         // 空白を除去
         message = message.replace(/ /g, '');
+
+        if (c.YES_MESSAGES.indexOf(message) != -1) {
+            console.log("「はい」と判定");
+            const words = u.getSessionValue(handlerInput, 'ENCRYPTED_WORDS');
+            // 文言生成
+            let speech = new Speech()
+                .say('暗号化結果を読み上げます。')
+                .pause('1s');
+            for (let i = 0; i < words.length; i++) {
+                if (words[i].use_yomi) {
+                    speech.say(words[i].yomi).pause('0.4s');
+                } else {
+                    speech.say(words[i].word).pause('0.4s');
+                }
+            }
+            speech.say('以上です。もう一度読み上げますか?');
+            const repromptOutput = 'もう一度読み上げますか?';
+
+            u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+            return handlerInput.responseBuilder
+                .speak(speech.ssml())
+                .reprompt(repromptOutput)
+                .getResponse();
+        }
+
         if (c.NO_MESSAGES.indexOf(message) != -1) {
             console.log("「いいえ」と判定");
             const speakOutput = 'ご利用ありがとうございました。暗号を解読する方法は、このスキルの説明文をご確認下さい。';
