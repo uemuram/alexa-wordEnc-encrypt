@@ -113,7 +113,6 @@ const AcceptMessageIntentHandler = {
             u.setState(handlerInput, CONFIRM_USE_KEY);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .withSimpleCard('暗号化メッセージ', kanaMessage2)
                 .reprompt(repromptOutput)
                 .getResponse();
         }
