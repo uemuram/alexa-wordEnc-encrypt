@@ -324,6 +324,18 @@ const EncryptIntentHandler = {
             intKey = parseInt(key);
             console.log('鍵 :' + key);
             console.log('鍵(int) :' + intKey);
+
+            // 鍵が4桁にならなかった場合は補正
+            if (!intKey || intKey < 1000 || intKey > 9999) {
+                console.log("鍵の桁数不正");
+                const speakOutput = '鍵は4桁の数字である必要があります。もう一度お願いします。';
+                const repromptOutput = '鍵に使う4桁の数字を言ってください';
+                return handlerInput.responseBuilder
+                    .speak(speakOutput)
+                    .reprompt(repromptOutput)
+                    .getResponse();
+            }
+
             speech.say('鍵')
                 .sayAs({ "word": key, "interpret": "digits" })
                 .say('でメッセージを暗号化し、Alexaアプリのアクティビティーに通知しました。暗号化結果を読み上げますか?')
