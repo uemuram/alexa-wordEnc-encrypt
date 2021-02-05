@@ -263,7 +263,7 @@ const EncryptIntentHandler = {
             if (c.NO_MESSAGES.indexOf(message) == -1) {
                 console.log("「いいえ」ではないと判定");
                 const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
-                const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+                const speakOutput = `すみません、うまく聞き取れませんでした。` + repromptOutput;
                 console.log('想定外呼び出し発生3');
                 return handlerInput.responseBuilder
                     .speak(speakOutput)
@@ -426,7 +426,7 @@ const FinishFollowIntentHandler = {
         }
 
         const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
-        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+        const speakOutput = `すみません、うまく聞き取れませんでした。` + repromptOutput;
         console.log('想定外呼び出し発生2');
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -513,7 +513,7 @@ const IntentReflectorHandler = {
         }
 
         console.log('想定外呼び出し発生');
-        speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+        speakOutput = `すみません、うまく聞き取れませんでした。` + repromptOutput;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
