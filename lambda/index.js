@@ -196,12 +196,18 @@ const AcceptKeyFollowIntentHandler = {
             .pause('1s');
         cardTitle = '暗号化結果(鍵:' + key + ')';
 
+        // カードメッセージ作成
+        let cardWords = [];
+        for (let i = 0; i < words.length; i++) {
+            cardWords.push(`(${i + 1}) ${words[i].word}`);
+        }
+
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         u.setState(handlerInput, CONFIRM_READ);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard(cardTitle, words.join('\n'))
+            .withSimpleCard(cardTitle, cardWords.join('\n'))
             .reprompt(repromptOutput)
             .getResponse();
     }
@@ -304,7 +310,7 @@ const EncryptIntentHandler = {
         // カードメッセージ作成
         let cardWords = [];
         for (let i = 0; i < words.length; i++) {
-            cardWords.push(words[i].word);
+            cardWords.push(`(${i + 1}) ${words[i].word}`);
         }
 
         return handlerInput.responseBuilder
