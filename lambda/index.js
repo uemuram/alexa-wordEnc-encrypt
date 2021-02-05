@@ -17,6 +17,7 @@ const ACCEPT_MESSAGE = 0;
 const CONFIRM_USE_KEY = 1;
 const ACCEPT_KEY = 2;
 const CONFIRM_READ = 3;
+const CONFIRM_ENCRYPT = 4;
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -105,17 +106,57 @@ const AcceptMessageIntentHandler = {
                 .reprompt(repromptOutput)
                 .getResponse();
         } else {
-            const speakOutput = `メッセージ「${kanaMessage2}」を暗号化します。解読のための鍵を設定しますか?`;
-            const repromptOutput = '解読のための鍵を設定しますか?'
+            const speakOutput = `メッセージ「${kanaMessage2}」を暗号化してよろしいでしょうか?`;
+            const repromptOutput = speakOutput;
 
             u.setSessionValue(handlerInput, 'MESSAGE', kanaMessage2);
             u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
-            u.setState(handlerInput, CONFIRM_USE_KEY);
+            u.setState(handlerInput, CONFIRM_ENCRYPT);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
                 .reprompt(repromptOutput)
                 .getResponse();
         }
+    }
+};
+
+// 暗号化対象メッセージの再受付
+const ReAcceptMessageIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+            && u.checkState(handlerInput, CONFIRM_ENCRYPT);
+    },
+    async handle(handlerInput) {
+        const speakOutput = '暗号化したいメッセージをどうぞ。';
+        const repromptOutput = speakOutput;
+
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+        u.setState(handlerInput, ACCEPT_MESSAGE);
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(repromptOutput)
+            .getResponse();
+    }
+};
+
+// 鍵利用確認
+const ConfirmUseKeyIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+            && u.checkState(handlerInput, CONFIRM_ENCRYPT);
+    },
+    async handle(handlerInput) {
+        const speakOutput = `メッセージを暗号化します。解読のための鍵を設定しますか?`;
+        const repromptOutput = '解読のための鍵を設定しますか?';
+
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+        u.setState(handlerInput, CONFIRM_USE_KEY);
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(repromptOutput)
+            .getResponse();
     }
 };
 
@@ -561,6 +602,8 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         AcceptMessageIntentHandler,
+        ReAcceptMessageIntentHandler,
+        ConfirmUseKeyIntentHandler,
         RequestKeyIntentHandler,
         AcceptKeyFollowIntentHandler,
         EncryptIntentHandler,
