@@ -106,7 +106,7 @@ const AcceptMessageIntentHandler = {
                 .reprompt(repromptOutput)
                 .getResponse();
         } else {
-            const speakOutput = `メッセージ「${kanaMessage2}」を暗号化してよろしいでしょうか?`;
+            const speakOutput = `メッセージ「${rawMessage}」を暗号化してよろしいでしょうか?`;
             const repromptOutput = speakOutput;
 
             u.setSessionValue(handlerInput, 'MESSAGE', kanaMessage2);
