@@ -17,6 +17,7 @@ const ACCEPT_MESSAGE = 0;
 const CONFIRM_USE_KEY = 1;
 const ACCEPT_KEY = 2;
 const CONFIRM_READ = 3;
+const CONFIRM_ENCRYPT = 4;
 
 const LaunchRequestHandler = {
     canHandle(handlerInput) {
@@ -105,18 +106,57 @@ const AcceptMessageIntentHandler = {
                 .reprompt(repromptOutput)
                 .getResponse();
         } else {
-            const speakOutput = `メッセージ「${kanaMessage2}」を暗号化します。解読のための鍵を設定しますか?`;
-            const repromptOutput = '解読のための鍵を設定しますか?'
+            const speakOutput = `メッセージ「${rawMessage}」を暗号化してよろしいでしょうか?`;
+            const repromptOutput = speakOutput;
 
             u.setSessionValue(handlerInput, 'MESSAGE', kanaMessage2);
             u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
-            u.setState(handlerInput, CONFIRM_USE_KEY);
+            u.setState(handlerInput, CONFIRM_ENCRYPT);
             return handlerInput.responseBuilder
                 .speak(speakOutput)
-                .withSimpleCard('暗号化メッセージ', kanaMessage2)
                 .reprompt(repromptOutput)
                 .getResponse();
         }
+    }
+};
+
+// 暗号化対象メッセージの再受付
+const ReAcceptMessageIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.NoIntent'
+            && u.checkState(handlerInput, CONFIRM_ENCRYPT);
+    },
+    async handle(handlerInput) {
+        const speakOutput = '暗号化したいメッセージをどうぞ。';
+        const repromptOutput = speakOutput;
+
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+        u.setState(handlerInput, ACCEPT_MESSAGE);
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(repromptOutput)
+            .getResponse();
+    }
+};
+
+// 鍵利用確認
+const ConfirmUseKeyIntentHandler = {
+    canHandle(handlerInput) {
+        return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+            && Alexa.getIntentName(handlerInput.requestEnvelope) === 'AMAZON.YesIntent'
+            && u.checkState(handlerInput, CONFIRM_ENCRYPT);
+    },
+    async handle(handlerInput) {
+        const speakOutput = `メッセージを暗号化します。解読のための鍵を設定しますか?`;
+        const repromptOutput = '解読のための鍵を設定しますか?';
+
+        u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
+        u.setState(handlerInput, CONFIRM_USE_KEY);
+        return handlerInput.responseBuilder
+            .speak(speakOutput)
+            .reprompt(repromptOutput)
+            .getResponse();
     }
 };
 
@@ -197,12 +237,18 @@ const AcceptKeyFollowIntentHandler = {
             .pause('1s');
         cardTitle = '暗号化結果(鍵:' + key + ')';
 
+        // カードメッセージ作成
+        let cardWords = [];
+        for (let i = 0; i < words.length; i++) {
+            cardWords.push(`(${i + 1}) ${words[i].word}`);
+        }
+
         u.setSessionValue(handlerInput, 'ENCRYPTED_WORDS', words);
         u.setSessionValue(handlerInput, 'REPROMPT_OUTPUT', repromptOutput);
         u.setState(handlerInput, CONFIRM_READ);
         return handlerInput.responseBuilder
             .speak(speech.ssml())
-            .withSimpleCard(cardTitle, words.join('\n'))
+            .withSimpleCard(cardTitle, cardWords.join('\n'))
             .reprompt(repromptOutput)
             .getResponse();
     }
@@ -258,7 +304,7 @@ const EncryptIntentHandler = {
             if (c.NO_MESSAGES.indexOf(message) == -1) {
                 console.log("「いいえ」ではないと判定");
                 const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
-                const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+                const speakOutput = `すみません、うまく聞き取れませんでした。` + repromptOutput;
                 console.log('想定外呼び出し発生3');
                 return handlerInput.responseBuilder
                     .speak(speakOutput)
@@ -305,7 +351,7 @@ const EncryptIntentHandler = {
         // カードメッセージ作成
         let cardWords = [];
         for (let i = 0; i < words.length; i++) {
-            cardWords.push(words[i].word);
+            cardWords.push(`(${i + 1}) ${words[i].word}`);
         }
 
         return handlerInput.responseBuilder
@@ -421,7 +467,7 @@ const FinishFollowIntentHandler = {
         }
 
         const repromptOutput = u.getSessionValue(handlerInput, 'REPROMPT_OUTPUT');
-        const speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+        const speakOutput = `すみません、うまく聞き取れませんでした。` + repromptOutput;
         console.log('想定外呼び出し発生2');
         return handlerInput.responseBuilder
             .speak(speakOutput)
@@ -508,7 +554,7 @@ const IntentReflectorHandler = {
         }
 
         console.log('想定外呼び出し発生');
-        speakOutput = `想定外の呼び出しが発生しました。` + repromptOutput;
+        speakOutput = `すみません、うまく聞き取れませんでした。` + repromptOutput;
         return handlerInput.responseBuilder
             .speak(speakOutput)
             .reprompt(repromptOutput)
@@ -556,6 +602,8 @@ exports.handler = Alexa.SkillBuilders.custom()
     .addRequestHandlers(
         LaunchRequestHandler,
         AcceptMessageIntentHandler,
+        ReAcceptMessageIntentHandler,
+        ConfirmUseKeyIntentHandler,
         RequestKeyIntentHandler,
         AcceptKeyFollowIntentHandler,
         EncryptIntentHandler,
